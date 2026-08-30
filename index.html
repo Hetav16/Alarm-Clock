@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Alien+Block&family=Bitcount+Single:wght@100..900&display=swap" rel="stylesheet">
+    <title>Digital Alarm Clock</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body onload="updateTime()">
+    <h1>Another Alarm Clock</h1>
+
+    <div class="wrapper">
+        <!-- Physical Clock Casing -->
+        <main class="clock-frame" id="clockBody">
+            <div class="clock-screen">
+                <div id="time" class="time">00<span class="colon">:</span>00<span class="colon">:</span>00</div>
+            </div>
+        </main>
+
+        <!-- Alarm Controls -->
+        <div class="controls">
+            <input type="time" id="alarmTime" aria-label="Set Alarm">
+            <button id="stopAlarm" class="btn-stop" onclick="stopAlarm()">Dismiss</button>
+        </div>
+    </div>
+
+    <audio id="alarmSound" src="freesound_community-alarm-clock-08-94363.mp3" preload="auto" loop></audio>
+    <script src="script.js"></script>
+</body>
+</html>

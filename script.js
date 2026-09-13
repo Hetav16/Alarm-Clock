@@ -1,62 +1,31 @@
-let time = document.getElementById('time');
-let alarmTime = document.getElementById('alarmTime');
-let alarmSound = document.getElementById('alarmSound');
-let clockBody = document.getElementById('clockBody');
-let isRinging = false; // Flag to prevent triggering play() repeatedly
-
-function updateTime() {
-    let now = new Date();
-    let hours = now.getHours();
-    let minutes = now.getMinutes();
-    let seconds = now.getSeconds();
-
-    minutes = formatTime(minutes);
-    seconds = formatTime(seconds);
-
-    // Added span tags around the colons for the blinking animation
-    time.innerHTML = hours + '<span class="colon">:</span>' + minutes + '<span class="colon">:</span>' + seconds;
-
-    // Check the alarm every second
-    checkAlarm();
-
-    setTimeout(updateTime, 1000);
-}
-
-function formatTime(i) {
-  if (i < 10) {i = "0" + i};  // add zero in front of numbers < 10
-  return i;
-}
-
-function checkAlarm() {
-    // If no alarm is set, do nothing
-    if (!alarmTime.value) return;
-
-    let now = new Date();
-    let currentHours = now.getHours();
-    let currentMinutes = now.getMinutes();
-
-    let alarmHours = parseInt(alarmTime.value.split(':')[0]);
-    let alarmMinutes = parseInt(alarmTime.value.split(':')[1]);
-
-    // Trigger the alarm if times match and it isn't already ringing
-    if (currentHours === alarmHours && currentMinutes === alarmMinutes) {
-        if (!isRinging) {
-            alarmSound.play();
-            clockBody.classList.add('ringing'); // Triggers the CSS shake/pulse animation
-            isRinging = true;
-        }
-    } else {
-        // Automatically reset the ringing flag once the minute passes
-        isRinging = false; 
-    }
-}
-
-function stopAlarm() {
-    alarmSound.pause();
-    alarmSound.currentTime = 0; // Reset the audio to the beginning
-    clockBody.classList.remove('ringing'); // Stop the animations
-    
-    // Clear the input so it doesn't immediately ring again
-    alarmTime.value = ""; 
-    isRinging = false;
-}
+const $=s=>document.querySelector(s);
+const timeEl=$('#time'), alarmTime=$('#alarmTime'), alarmSound=$('#alarmSound'), clockBody=$('#clockBody');
+let ringing=false, weatherChart, backgroundChart, activeMetric='temperature', weatherData=null;
+const modes=[
+ {key:'temperature',label:'Temperature',field:'temperature_2m',color:'rgba(255, 95, 95, 0.888)',fillColor:'rgba(255, 95, 95, 0.13)',bgFillColor:'rgba(255, 95, 95, 0.09)',unit:'°C'},
+ {key:'feels',label:'Feels like',field:'apparent_temperature',color:'#65e6ff',fillColor:'rgba(101, 230, 255, 0.13)',bgFillColor:'rgba(101, 230, 255, 0.09)',unit:'°C'},
+ {key:'humidity',label:'Humidity',field:'relative_humidity_2m',color:'#ff9b54',unit:'%'},
+ {key:'wind',label:'Wind',field:'wind_speed_10m',color:'#ff6f91',unit:' km/h'},
+ {key:'rain',label:'Precipitation',field:'precipitation_probability',color:'#8f8cff',unit:'%'}
+];
+function updateTime(){const n=new Date(),h=String(n.getHours()).padStart(2,'0'),m=String(n.getMinutes()).padStart(2,'0'),s=String(n.getSeconds()).padStart(2,'0');timeEl.innerHTML=`${h}<span class="colon">:</span>${m}<span class="colon">:</span>${s}`;$('#dateText').textContent=n.toLocaleDateString([], {weekday:'short',month:'short',day:'numeric'});checkAlarm()}
+setInterval(updateTime,1000);updateTime();
+function checkAlarm(){if(!alarmTime.value)return;const n=new Date(),[h,m]=alarmTime.value.split(':').map(Number);if(n.getHours()===h&&n.getMinutes()===m&&!ringing){alarmSound.play().catch(()=>toast('Alarm audio needs user interaction'));clockBody.classList.add('ringing');ringing=true}else if(n.getMinutes()!==m)ringing=false}
+$('#stopAlarm').onclick=()=>{alarmSound.pause();alarmSound.currentTime=0;clockBody.classList.remove('ringing');alarmTime.value='';ringing=false};
+function weatherText(c){return c===0?'Clear sky':c<=3?'Partly cloudy':c<=48?'Foggy':c<=57?'Drizzle':c<=67?'Rain':c<=77?'Snow':c<=82?'Showers':'Thunderstorm'}
+async function loadWeather(lat,lon,name='Selected location'){toast('Loading weather…');const url=`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,weather_code,temperature_2m_min,apparent_temperature_max,apparent_temperature_min,uv_index_max,wind_speed_10m_max,wind_gusts_10m_max,wind_direction_10m_dominant,shortwave_radiation_sum,moon_phase,moonset,moonrise,sunset,sunrise,rain_sum,showers_sum,snowfall_sum,precipitation_sum,precipitation_hours,precipitation_probability_max&hourly=temperature_2m,precipitation_probability,apparent_temperature,dew_point_2m,relative_humidity_2m,weather_code,pressure_msl,surface_pressure,cloud_cover,visibility,wind_gusts_10m,wind_direction_10m,wind_speed_10m&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,rain,showers,snowfall,surface_pressure,pressure_msl,cloud_cover,weather_code,wind_gusts_10m,wind_direction_10m,wind_speed_10m&timezone=auto`;
+try{const r=await fetch(url);if(!r.ok)throw Error('Weather request failed');weatherData=await r.json();$('#placeName').textContent=name;renderWeather();toast('Weather updated')}catch(e){toast(e.message)}}
+function renderWeather(){const c=weatherData.current;$('#conditionTitle').textContent=weatherText(c.weather_code);$('#currentWeather').textContent=weatherText(c.weather_code);$('#currentTemp').textContent=`${Math.round(c.temperature_2m)}°C`;$('#weatherBigTemp').textContent=`${Math.round(c.temperature_2m)}°`;$('#feelsLike').textContent=`Feels like ${Math.round(c.apparent_temperature)}°C`;
+const metric=[['Humidity',c.relative_humidity_2m+'%'],['Wind',Math.round(c.wind_speed_10m)+' km/h'],['Pressure',Math.round(c.pressure_msl)+' hPa'],['Cloud cover',c.cloud_cover+'%'],['Gusts',Math.round(c.wind_gusts_10m)+' km/h'],['Precipitation',c.precipitation+' mm']];$('#metrics').innerHTML=metric.map(x=>`<div class="metric"><span>${x[0]}</span><strong>${x[1]}</strong></div>`).join('');
+$('#forecastCards').innerHTML=weatherData.daily.time.slice(0,7).map((d,i)=>`<article class="forecast"><span class="day">${new Date(d+'T12:00').toLocaleDateString([], {weekday:'short'})}</span><div class="code">${weatherIcon(weatherData.daily.weather_code[i])}</div><strong>${Math.round(weatherData.daily.temperature_2m_max[i])}° / ${Math.round(weatherData.daily.temperature_2m_min[i])}°</strong><small>${weatherData.daily.precipitation_probability_max[i]}% rain</small></article>`).join('');renderTabs();drawCharts()}
+function weatherIcon(c){return c===0?'☀':c<=3?'⛅':c<=48?'☁':c<=67?'☂':c<=77?'❄':'⚡'}
+function renderTabs(){$('#chartTabs').innerHTML=modes.map(m=>`<button class="tab ${m.key===activeMetric?'active':''}" data-key="${m.key}">${m.label}</button>`).join('');document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{activeMetric=b.dataset.key;renderTabs();drawCharts()})}
+function drawCharts(){if(!weatherData)return;const m=modes.find(x=>x.key===activeMetric),h=weatherData.hourly,labels=h.time.slice(0,72).map(x=>new Date(x).toLocaleString([], {hour:'2-digit',day:'2-digit'}));const values=h[m.field].slice(0,72);if(weatherChart)weatherChart.destroy();if(backgroundChart)backgroundChart.destroy();const common={responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false}};weatherChart=new Chart($('#weatherChart'),{type:'line',data:{labels,datasets:[{label:m.label+' ('+m.unit+')',data:values,borderColor:m.color,backgroundColor:m.fillColor,fill:true,tension:.35,pointRadius:0,borderWidth:2.5}]},options:{...common,plugins:{legend:{labels:{color:'#f4f1e8'}},tooltip:{callbacks:{label:x=>`${x.dataset.label}: ${x.parsed.y}`}}},scales:{x:{ticks:{color:'#8d969c',maxTicksLimit:9},grid:{color:'#ffffff0d'}},y:{ticks:{color:'#8d969c'},grid:{color:'#ffffff12'}}}}});backgroundChart=new Chart($('#backgroundChart'),{type:'line',data:{labels,datasets:[{data:values,borderColor:m.color,borderWidth:3,pointRadius:0,tension:.4,fill:true,backgroundColor:m.bgFillColor}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{enabled:false}},scales:{x:{display:false},y:{display:false}}}});$('#chartMode').textContent='Background: '+m.label}
+$('#chartMode').onclick=()=>cycleMode(1);$('.clock-frame').addEventListener('wheel',e=>{e.preventDefault();cycleMode(e.deltaY>0?1:-1)},{passive:false});
+function cycleMode(dir){let i=modes.findIndex(m=>m.key===activeMetric);activeMetric=modes[(i+dir+modes.length)%modes.length].key;renderTabs();drawCharts()}
+$('#locationBtn').onclick=()=>{if(!navigator.geolocation)return toast('Geolocation is not supported');navigator.geolocation.getCurrentPosition(async p=>{const {latitude,longitude}=p.coords;let name='My location';try{const r=await fetch(`https://geocoding-api.open-meteo.com/v1/reverse?latitude=${latitude}&longitude=${longitude}&count=1`);const d=await r.json();name=d.results?.[0]?.name||name}catch{}loadWeather(latitude,longitude,name)},()=>toast('Location permission was denied'))};
+async function searchLocation(){const q=$('#locationSearch').value.trim();if(!q)return;try{toast('Searching…');const r=await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=1&language=en&format=json`),d=await r.json(),x=d.results?.[0];if(!x)throw Error('Location not found');loadWeather(x.latitude,x.longitude,[x.name,x.admin1,x.country].filter(Boolean).join(', '))}catch(e){toast(e.message)}}
+$('#searchBtn').onclick=searchLocation;$('#locationSearch').addEventListener('keydown',e=>{if(e.key==='Enter')searchLocation()});
+function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('show');clearTimeout(e._t);e._t=setTimeout(()=>e.classList.remove('show'),2200)}
+// Default fallback: Ahmedabad, then the user can grant location access.
+loadWeather(23.0258,72.5873,'Ahmedabad, Gujarat');

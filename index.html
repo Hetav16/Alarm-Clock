@@ -1,33 +1,61 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Alien+Block&family=Bitcount+Single:wght@100..900&display=swap" rel="stylesheet">
-    <title>Digital Alarm Clock</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bitcount+Single:wght@100..900&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <title>QUANTITATIVE MORNING</title>
+  <link rel="stylesheet" href="style.css">
 </head>
-<body onload="updateTime()">
-    <h1>Another Alarm Clock</h1>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div><p class="eyebrow">LIVE WEATHER / ALARM</p><h1>QUANTITATIVE MORNING</h1></div>
+      <div class="location-tools">
+        <div class="search-wrap"><input id="locationSearch" placeholder="Search city or place"><button id="searchBtn">Search</button></div>
+        <button id="locationBtn" class="icon-btn" title="Use my location">◎ My location</button>
+      </div>
+    </header>
 
-    <div class="wrapper">
-        <!-- Physical Clock Casing -->
-        <main class="clock-frame" id="clockBody">
-            <div class="clock-screen">
-                <div id="time" class="time">00<span class="colon">:</span>00<span class="colon">:</span>00</div>
-            </div>
-        </main>
-
-        <!-- Alarm Controls -->
-        <div class="controls">
-            <input type="time" id="alarmTime" aria-label="Set Alarm">
-            <button id="stopAlarm" class="btn-stop" onclick="stopAlarm()">Dismiss</button>
+    <main class="dashboard">
+      <section class="clock-panel" id="clockBody">
+        <div class="clock-frame">
+          <div class="chart-backdrop"><canvas id="backgroundChart"></canvas></div>
+          <div class="clock-screen">
+            <div class="screen-top"><span id="placeName">Finding location…</span><span id="dateText"></span></div>
+            <div id="time" class="time">00<span class="colon">:</span>00<span class="colon">:</span>00</div>
+            <div class="screen-bottom"><span id="currentWeather">--</span><span id="currentTemp">--°</span></div>
+          </div>
         </div>
-    </div>
+        <div class="controls">
+          <label>ALARM <input type="time" id="alarmTime"></label>
+          <button id="stopAlarm" class="btn-stop">Dismiss</button>
+          <button id="chartMode" class="btn-ghost">Background: Temperature</button>
+        </div>
+        <p class="hint">Scroll over the clock to cycle weather charts</p>
+      </section>
 
-    <audio id="alarmSound" src="freesound_community-alarm-clock-08-94363.mp3" preload="auto" loop></audio>
-    <script src="script.js"></script>
+      <aside class="weather-panel">
+        <div class="current-card"><div><p class="eyebrow">CURRENT CONDITIONS</p><h2 id="conditionTitle">Loading…</h2><p id="feelsLike">Feels like --°C</p></div><div class="big-temp" id="weatherBigTemp">--°</div></div>
+        <div class="metrics-grid" id="metrics"></div>
+      </aside>
+    </main>
+
+    <section class="chart-section">
+      <div class="section-head"><div><p class="eyebrow">EXPLORER</p><h2>Weather curves</h2></div><div id="chartTabs" class="chart-tabs"></div></div>
+      <div class="chart-card"><canvas id="weatherChart"></canvas></div>
+    </section>
+
+    <section class="forecast-section">
+      <div class="section-head"><div><p class="eyebrow">NEXT 7 DAYS</p><h2>Forecast hotspots</h2></div></div>
+      <div id="forecastCards" class="forecast-grid"></div>
+    </section>
+  </div>
+  <div id="toast" class="toast"></div>
+  <audio id="alarmSound" src="freesound_community-alarm-clock-08-94363.mp3" preload="auto" loop></audio>
+  <script src="script.js"></script>
 </body>
 </html>
